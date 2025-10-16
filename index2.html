@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Digital Electricity Meter (Mock kWh)</title>
+
+  <style>
+    :root {
+      --green: #2ecc71;
+      --red: #e74c3c;
+      --blue: #3498db;
+      --bg: #f5f5f5;
+      --text-dark: #2c3e50;
+      --muted: #777;
+    }
+
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: var(--bg);
+      margin: 0;
+      padding: 0;
+    }
+
+    .wrap {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      padding: 20px;
+    }
+
+    /* Left Buttons */
+    .side-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 0 0 180px;
+    }
+
+    .toggle-btn {
+      padding: 10px 16px;
+      font-size: 15px;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      color: white;
+      transition: 0.3s;
+      width: 100%;
+      text-align: center;
+    }
+
+    .toggle-btn.green {
+      background-color: var(--green);
+    }
+
+    .toggle-btn.red {
+      background-color: var(--red);
+    }
+
+    .toggle-btn:hover {
+      opacity: 0.85;
+    }
+
+    /* Meter box */
+    .meter {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.15);
+      padding: 20px;
+      width: 480px;
+      max-width: 100%;
+      flex: 1 1 400px;
+    }
+
+    .pill {
+      background: var(--blue);
+      color: white;
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+    }
+
+    .hint {
+      color: #555;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .small.muted {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .display {
+      margin-top: 15px;
+    }
+
+    .digital-digits {
+      font-size: 32px;
+      font-weight: bold;
+      color: var(--text-dark);
+      word-wrap: break-word;
+    }
+
+    .readouts {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      margin-top: 10px;
+      gap: 10px;
+    }
+
+    .readout {
+      flex: 1 1 45%;
+    }
+
+    .readout .label {
+      font-weight: bold;
+      color: #555;
+    }
+
+    .readout .value.big {
+      font-size: 20px;
+      color: #000;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-top: 15px;
+    }
+
+    .controls button,
+    .controls select {
+      font-size: 14px;
+    }
+
+    .side {
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+      width: 240px;
+      max-width: 100%;
+      flex: 1 1 240px;
+    }
+
+    .side input {
+      width: 100%;
+      padding: 6px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      margin-top: 4px;
+      font-size: 14px;
+    }
+
+    .side button {
+      flex: 1;
+      padding: 8px;
+      border-radius: 8px;
+      border: none;
+      background: var(--blue);
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .side button:hover {
+      opacity: 0.9;
+    }
+
+    .list-item {
+      border-bottom: 1px solid #eee;
+      padding: 4px 0;
+      font-size: 14px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* RESPONSIVE DESIGN */
+    @media (max-width: 900px) {
+      .wrap {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .side-buttons {
+        flex-direction: row;
+        justify-content: center;
+        gap: 15px;
+      }
+
+      .toggle-btn {
+        min-width: 130px;
+        font-size: 14px;
+      }
+
+      .meter, .side {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .digital-digits {
+        font-size: 26px;
+      }
+
+      .controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .controls button,
+      .controls select {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- Left side buttons -->
+    <div class="side-buttons">
+      <button id="pspclBtn" class="toggle-btn green">PSPCL Energy Meter</button>
+      <button id="buyBtn" class="toggle-btn red">Buy</button>
+    </div>
+
+    <!-- Meter Panel -->
+    <div class="meter">
+      <div class="meter-header">
+        <div>
+          <div class="pill">Mock Digital Meter — kWh Simulator</div>
+          <div class="hint">Add appliances or load demo data below</div>
+        </div>
+        <div class="small muted">
+          Tick every <span id="tickMsLabel">1s</span>
+        </div>
+      </div>
+
+      <div class="display">
+        <div>
+          <div class="digital-digits" id="displayPower">0 W</div>
+          <div class="small muted">Current Power (instant)</div>
+        </div>
+
+        <div class="readouts">
+          <div class="readout">
+            <div class="label">Total energy</div>
+            <div class="value big" id="displayKwh">0.000 kWh</div>
+            <div class="small muted">Cumulative</div>
+          </div>
+
+          <div class="readout">
+            <div class="label">Sim Time</div>
+            <div class="value" id="simTime">00:00:00</div>
+            <div class="small muted">hh:mm:ss</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button id="startBtn">Start</button>
+        <button id="pauseBtn" disabled>Pause</button>
+        <button id="resetBtn">Reset</button>
+
+        <label for="speedSelect" class="small muted" style="margin-left:8px">Speed</label>
+        <select id="speedSelect" class="speed">
+          <option value="1">1×</option>
+          <option value="10">10×</option>
+          <option value="60">60×</option>
+          <option value="3600">3600×</option>
+        </select>
+
+        <div style="margin-left:auto" class="muted">
+          Total appliances: <span id="applianceCount">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Side panel -->
+    <div class="side">
+      <div class="pill">Appliances (mock)</div>
+
+      <div style="margin-top:12px">
+        <label for="newName">Name</label>
+        <input id="newName" type="text" placeholder="e.g. Tube Light" />
+
+        <label for="newWatt" style="margin-top:8px">Wattage (W)</label>
+        <input id="newWatt" type="number" placeholder="e.g. 15" />
+
+        <label for="newCount" style="margin-top:8px">Count</label>
+        <input id="newCount" type="number" value="1" min="1" />
+
+        <div style="margin-top:8px; display:flex; gap:8px;">
+          <button id="addApplianceBtn">Add</button>
+          <button id="loadScenarioBtn">Load Demo</button>
+        </div>
+      </div>
+
+      <div class="list" id="applianceList" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <script>
+    const pspclBtn = document.getElementById("pspclBtn");
+    const buyBtn = document.getElementById("buyBtn");
+    const displayPower = document.getElementById("displayPower");
+    const displayKwh = document.getElementById("displayKwh");
+    const simTime = document.getElementById("simTime");
+    const applianceList = document.getElementById("applianceList");
+    const applianceCount = document.getElementById("applianceCount");
+    const addBtn = document.getElementById("addApplianceBtn");
+    const loadBtn = document.getElementById("loadScenarioBtn");
+    const startBtn = document.getElementById("startBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const speedSelect = document.getElementById("speedSelect");
+
+    let appliances = [];
+    let totalPower = 0;
+    let totalEnergy = 0;
+    let seconds = 0;
+    let running = false;
+    let timer = null;
+    let addingUnits = false;
+
+    function updateUI() {
+      applianceList.innerHTML = "";
+      totalPower = appliances.reduce((sum, a) => sum + a.watt * a.count, 0);
+      appliances.forEach(a => {
+        const item = document.createElement("div");
+        item.className = "list-item";
+        item.textContent = `${a.name} (${a.watt}W × ${a.count})`;
+        applianceList.appendChild(item);
+      });
+      applianceCount.textContent = appliances.length;
+      displayPower.textContent = totalPower + " W";
+    }
+
+    addBtn.addEventListener("click", () => {
+      const name = document.getElementById("newName").value.trim();
+      const watt = parseFloat(document.getElementById("newWatt").value);
+      const count = parseInt(document.getElementById("newCount").value);
+      if (!name || isNaN(watt) || isNaN(count)) {
+        alert("Please enter valid appliance details!");
+        return;
+      }
+      appliances.push({ name, watt, count });
+      document.getElementById("newName").value = "";
+      document.getElementById("newWatt").value = "";
+      document.getElementById("newCount").value = 1;
+      updateUI();
+    });
+
+    loadBtn.addEventListener("click", () => {
+      appliances = [
+        { name: "Fan", watt: 75, count: 2 },
+        { name: "Tube Light", watt: 40, count: 3 },
+        { name: "Refrigerator", watt: 150, count: 1 },
+        { name: "TV", watt: 100, count: 1 }
+      ];
+      updateUI();
+    });
+
+    function formatTime(sec) {
+      const h = String(Math.floor(sec / 3600)).padStart(2, "0");
+      const m = String(Math.floor((sec % 3600) / 60)).padStart(2, "0");
+      const s = String(sec % 60).padStart(2, "0");
+      return `${h}:${m}:${s}`;
+    }
+
+    function tick() {
+      if (!running) return;
+      const tickSpeed = parseInt(speedSelect.value);
+      const dt = 1 * tickSpeed;
+      seconds += dt;
+      totalEnergy += (totalPower / 1000) * (dt / 3600);
+      displayKwh.textContent = totalEnergy.toFixed(3) + " kWh";
+      simTime.textContent = formatTime(seconds);
+    }
+
+    startBtn.addEventListener("click", () => {
+      if (appliances.length === 0) {
+        alert("Add or load appliances first!");
+        return;
+      }
+      running = true;
+      startBtn.disabled = true;
+      pauseBtn.disabled = false;
+      if (!timer) timer = setInterval(tick, 1000);
+    });
+
+    pauseBtn.addEventListener("click", () => {
+      running = false;
+      startBtn.disabled = false;
+      pauseBtn.disabled = true;
+    });
+
+    resetBtn.addEventListener("click", () => {
+      running = false;
+      startBtn.disabled = false;
+      pauseBtn.disabled = true;
+      totalEnergy = 0;
+      seconds = 0;
+      displayKwh.textContent = "0.000 kWh";
+      simTime.textContent = "00:00:00";
+      if (timer) clearInterval(timer);
+      timer = null;
+    });
+
+    buyBtn.addEventListener("click", () => {
+      pspclBtn.classList.remove("green");
+      pspclBtn.classList.add("red");
+      buyBtn.classList.remove("red");
+      buyBtn.classList.add("green");
+
+      const units = parseFloat(prompt("Enter units (kWh) you want to buy:", "10"));
+      if (isNaN(units) || units <= 0) {
+        alert("Please enter a valid number of units!");
+        buyBtn.classList.remove("green");
+        buyBtn.classList.add("red");
+        pspclBtn.classList.remove("red");
+        pspclBtn.classList.add("green");
+        return;
+      }
+
+      const incrementSpeed = 50;
+      const steps = 100;
+      const delta = units / steps;
+      let added = 0;
+      addingUnits = true;
+
+      const addInterval = setInterval(() => {
+        if (added >= units || !addingUnits) {
+          clearInterval(addInterval);
+          addingUnits = false;
+          buyBtn.classList.remove("green");
+          buyBtn.classList.add("red");
+          pspclBtn.classList.remove("red");
+          pspclBtn.classList.add("green");
+          return;
+        }
+        totalEnergy += delta;
+        added += delta;
+        displayKwh.textContent = totalEnergy.toFixed(3) + " kWh";
+      }, incrementSpeed);
+    });
+
+    pspclBtn.addEventListener("click", () => {
+      pspclBtn.classList.add("green");
+      pspclBtn.classList.remove("red");
+      buyBtn.classList.add("red");
+      buyBtn.classList.remove("green");
+    });
+  </script>
+</body>
+</html>
